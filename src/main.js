@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AnimationUtils } from 'three';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import dat from 'dat.gui';
+import gsap from 'gsap';
 
 const envStudio =
   "https://cdn.jsdelivr.net/gh/sabareesh-ed/ariane-space@main/src/assets/ENV_V04_OPTI.hdr";
@@ -17,6 +18,14 @@ const clock = new THREE.Clock();
 const actions = [];
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+
+let isClickable = false;
+
+const overviewBtn = document.querySelector('#overview');
+const modularityBtn = document.querySelector('#modularity');
+const versatilityBtn = document.querySelector('#versatility');
+const booster2Btn = document.querySelector('#booster2');
+const booster4Btn = document.querySelector('#booster4');
 
 const gui = new dat.GUI();
 
@@ -56,6 +65,10 @@ function init() {
   controls.enableDamping = true;
   controls.target.set(3, -9, 17);
 
+  controls.enablePan = false;
+  controls.touches.TWO = THREE.TOUCH.NONE;
+  controls.enableZoom = false;
+  
   const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
   scene.add(hemiLight);
 
@@ -91,13 +104,12 @@ function init() {
     import.meta.url
   ).href;
 
+  let arianeMain = null;
   loader.load(
     modelURL,
     (gltf) => {
       model = gltf.scene;
       scene.add(model);
-
-      let arianeMain = null;
 
       model.traverse((child) => {
         console.log(child.name);
@@ -123,16 +135,16 @@ function init() {
 
       function rotateModel() {
         if (arianeMain) {
-          arianeMain.rotation.y -= 0.001;
+          arianeMain.rotation.y -= 0.0007;
         }
         requestAnimationFrame(rotateModel);
       }
       rotateModel();
 
-      model.position.set(3, -23, 17);
-      model.scale.set(1.5, 1.5, 1.5);
+      model.position.set(3, -26, 17);
+      model.scale.set(1.7, 1.7, 1.7);
 
-      mixer = new THREE.AnimationMixer(model);
+      mixer = new THREE.AnimationMixer(model); 
       const originalClip = gltf.animations[0];
 
       const openRocket = AnimationUtils.subclip(originalClip, "openRocket", 0, 240, 30);
@@ -159,6 +171,192 @@ function init() {
 
       createAnimationGUI(booster4to2);
 
+      //event listeners
+      overviewBtn.addEventListener('click', () => {
+        doOpenRocket();
+      })
+      
+      modularityBtn.addEventListener('click', () => {
+        doBooster4to2();
+      })
+      
+      versatilityBtn.addEventListener('click', () => {
+        doVersatility();
+      })
+      
+      booster2Btn.addEventListener('click', () => {
+        doBooster4to2();
+      }) 
+      
+      booster4Btn.addEventListener('click', () => {
+        doBooster2to4();
+      })
+
+      // all functions
+      function doOpenRocket() { 
+        actions.forEach((action) => action.stop());
+        controls.target.set(3, -9, 17);
+        model.position.set(3, -26, 17);
+        model.scale.set(1.7, 1.7, 1.7);
+        model.rotation.set(0, 0, 0);
+        
+        model.traverse((child) => {
+          if (child.name && child.name.startsWith("TXT__")) {
+            child.visible = false;
+          }
+        });
+      actions[0].reset().play();
+
+      isClickable = false;
+      }
+
+      doOpenRocket();
+
+      function doBooster4to2() {
+        actions.forEach((a) => a.stop());
+        const action = actions[1];
+        action.reset();
+        action.timeScale = -1;
+        action.time = booster4to2.duration;
+        model.position.set(7, 4, 48);
+        model.rotation.y += 0.01;
+        model.scale.set(1.7, 1.7, 1.7);
+        model.rotation.x = -1.5;
+        camera.position.set(10, 10, 70);
+
+        model.traverse((child) => {
+          if (child.name && child.name.startsWith("TXT__")) {
+            child.visible = false;
+          }
+        });
+
+        isClickable = false;
+        action.play();
+      }
+      
+      function doBooster2to4() {
+        actions.forEach((a) => a.stop());
+        model.position.set(7, 4, 48);
+        model.rotation.x = -1.5;
+        model.scale.set(1.7, 1.7, 1.7);
+        camera.position.set(10, 10, 70);
+  
+        model.traverse((child) => {
+          if (child.name && child.name.startsWith("TXT__")) {
+            child.visible = false;
+          }
+        });
+        actions[2].play();
+
+        isClickable = false;
+      }
+
+      function simulateClickOnCharge(targetObjectName) {
+        
+        // Ensure that the object exists
+        if (!model) return;
+      
+        const clickedObject = model.getObjectByName(targetObjectName);
+        if (!clickedObject) return; // Object not found, exit
+      
+        const targetFrame = frameMapping[clickedObject.name];
+      
+        if (targetFrame !== undefined) {
+          const clipStartFrame = 895;
+          const fps = 30;
+          const targetTime = (targetFrame - clipStartFrame) / fps;
+      
+          actions.forEach((action, idx) => {
+            if (idx !== 3) {
+              action.stop();
+            }
+          });
+      
+          const versatilityAction = actions[3];
+      
+          if (lastTargetTime === null) {
+            versatilityAction.reset();
+            versatilityAction.play();
+            versatilityAction.paused = false;
+            lastTargetTime = 0; 
+          } else {
+            versatilityAction.play();
+            versatilityAction.paused = false;
+          }
+      
+          gsap.to(versatilityAction, {
+            time: targetTime,
+            duration: Math.abs(targetTime - versatilityAction.time) * 0.2,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              versatilityAction.paused = true;
+              lastTargetTime = targetTime;
+            },
+          });
+        }
+      }
+
+
+      function doVersatility() {
+        actions.forEach((a) => a.stop());
+        model.position.set(3, -42, 17);
+        model.scale.set(2.4, 2.4, 2.4);
+        model.rotation.set(0, 0, 0);
+        
+        model.traverse((child) => {
+            if (child.name && child.name.startsWith("TXT__")) {
+                child.visible = true;
+            }
+        });
+    
+        isClickable = true;
+    
+        // Set up a function to simulate clicks on all charges at intervals
+        const chargeNames = [
+            "___CHARGE_001",
+            "___CHARGE_002",
+            "___CHARGE_003",
+            "___CHARGE_004",
+            "___CHARGE_005",
+            "___CHARGE_006",
+            "___CHARGE_007"
+        ];
+    
+        let currentChargeIndex = 0;
+        
+        // Start the click simulation immediately
+        simulateClickOnCharge(chargeNames[currentChargeIndex]);
+    
+        // Set interval to continue simulating clicks every 2.5 seconds
+        const chargeInterval = setInterval(() => {
+            currentChargeIndex++;
+    
+            if (currentChargeIndex < chargeNames.length) {
+                simulateClickOnCharge(chargeNames[currentChargeIndex]);
+            } else {
+                clearInterval(chargeInterval);
+            }
+        }, 3000);
+    
+        const originalOnClick = onClick;
+        onClick = function(event) {
+            originalOnClick(event);
+    
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
+                const targetFrame = frameMapping[clickedObject.name];
+                if (targetFrame !== undefined) {
+                    clearInterval(chargeInterval);
+                }
+            }
+        };
+    }
+    
+      
+
+
+
+      // Add model controls to the dat.GUI
       const modelFolder = gui.addFolder("Model");
       modelFolder.add(model.position, "x", -70, 70).name("Position X");
       modelFolder.add(model.position, "y", -70, 70).name("Position Y");
@@ -172,7 +370,7 @@ function init() {
       modelFolder.open();
     },
     (xhr) => {
-      console.log(`Model ${((xhr.loaded / xhr.total) * 100).toFixed(2)}% loaded`);
+      console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
     },
     (error) => {
       console.error("An error occurred while loading the GLTF model:", error);
@@ -183,10 +381,11 @@ function init() {
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("click", onClick, false);
 
+  // Set up camera controls in the GUI
   const cameraFolder = gui.addFolder("Camera");
   cameraFolder.add(camera.position, "x", -10, 10).name("Camera X");
   cameraFolder.add(camera.position, "y", -10, 10).name("Camera Y");
-  cameraFolder.add(camera.position, "z", 1, 100).name("Camera Z");
+  cameraFolder.add(camera.position, "z", 0, 1, 100).name("Camera Z");
   cameraFolder
     .add(camera, "fov", 10, 75)
     .name("Field of View")
@@ -200,9 +399,9 @@ function createAnimationGUI(booster4to2) {
   const animationControls = {
     playAnimation1: function () {
       actions.forEach((action) => action.stop());
-
-      model.position.set(3, -23, 17);
-      model.scale.set(1.5, 1.5, 1.5);
+      controls.target.set(3, -9, 17);
+      model.position.set(3, -26, 17);
+      model.scale.set(1.7, 1.7, 1.7);
       model.rotation.set(0, 0, 0);
       
       model.traverse((child) => {
@@ -220,7 +419,9 @@ function createAnimationGUI(booster4to2) {
       action.time = booster4to2.duration;
       model.position.set(7, 4, 48);
       model.rotation.y += 0.01;
+      model.scale.set(1.7, 1.7, 1.7);
       model.rotation.x = -1.5;
+      camera.position.set(10, 10, 70);
 
       model.traverse((child) => {
         if (child.name && child.name.startsWith("TXT__")) {
@@ -233,6 +434,8 @@ function createAnimationGUI(booster4to2) {
       actions.forEach((a) => a.stop());
       model.position.set(7, 4, 48);
       model.rotation.x = -1.5;
+      model.scale.set(1.7, 1.7, 1.7);
+      camera.position.set(10, 10, 70);
 
       model.traverse((child) => {
         if (child.name && child.name.startsWith("TXT__")) {
@@ -242,16 +445,17 @@ function createAnimationGUI(booster4to2) {
       actions[2].play();
     },
     playAnimation4: function () {
+      // Uncomment and modify as needed.
       actions.forEach((a) => a.stop());
-      model.position.set(7.8, -23, 36);
+      model.position.set(3, -42, 17);
+      model.scale.set(2.4, 2.4, 2.4);
       model.rotation.set(0, 0, 0);
-
+      
       model.traverse((child) => {
         if (child.name && child.name.startsWith("TXT__")) {
           child.visible = true;
         }
       });
-      actions[3].play();
     },
   };
 
@@ -269,8 +473,12 @@ function onPointerMove(event) {
   raycaster.intersectObjects(scene.children, true);
 }
 
+let lastTargetTime = null;
+
 function onClick(event) {
   event.preventDefault();
+
+  if (!isClickable) return; 
 
   const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
   const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -286,13 +494,35 @@ function onClick(event) {
     if (targetFrame !== undefined) {
       const clipStartFrame = 895;
       const fps = 30;
-      let targetTime = (targetFrame - clipStartFrame) / fps;
-      actions.forEach((action) => action.stop());
+      const targetTime = (targetFrame - clipStartFrame) / fps;
+
+      actions.forEach((action, idx) => {
+        if (idx !== 3) {
+          action.stop();
+        }
+      });
+
       const versatilityAction = actions[3];
-      versatilityAction.reset();
-      versatilityAction.time = targetTime;
-      versatilityAction.play();
-      mixer.update(0);
+      
+      if (lastTargetTime === null) {
+        versatilityAction.reset();
+        versatilityAction.play();
+        versatilityAction.paused = false;
+        lastTargetTime = 0; 
+      } else {
+        versatilityAction.play();
+        versatilityAction.paused = false;
+      }
+
+      gsap.to(versatilityAction, {
+        time: targetTime,
+        duration: Math.abs(targetTime - versatilityAction.time) * 0.2,
+        ease: 'power1.inOut',
+        onComplete: () => {
+          versatilityAction.paused = true;
+          lastTargetTime = targetTime;
+        },
+      });
     }
   }
 }
@@ -306,7 +536,7 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
-  console.log("delta", delta)
+
   if (mixer) mixer.update(delta);
   controls.update();
   renderer.clear();
