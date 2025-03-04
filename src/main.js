@@ -114,7 +114,7 @@ function init() {
 
   const loader = new GLTFLoader();
   const modelURL = new URL(
-    "./assets/OVERVIEW_V06/OVERVIEW_V06.gltf",
+    "https://tangerine-nougat-dac824.netlify.app/OVERVIEW_V06/OVERVIEW_V06.gltf",
     import.meta.url
   ).href;
 
