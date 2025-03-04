@@ -23,7 +23,9 @@ let isClickable = false;
 
 const overviewBtn = document.querySelector('#overview');
 const modularityBtn = document.querySelector('#modularity');
+const floatModularityBtn = document.querySelector('#float-btn-modularity');
 const versatilityBtn = document.querySelector('#versatility');
+const floatVersatilityBtn = document.querySelector('#float-btn-versatility');
 const booster2Btn = document.querySelector('#booster2');
 const booster4Btn = document.querySelector('#booster4');
 
@@ -39,10 +41,22 @@ const frameMapping = {
   "___CHARGE_007": 1800,
 };
 
-init();
-animate();
+const hiddenModelChildren = [
+  "TXT__single_launch007", "TXT__single_launch008", "TXT__single_launch009", "TXT__single_launch010", 
+  "TXT__single_launch011", "TXT__single_launch012", 
+  "TXT__single_launch013"
+];
 
-let model;
+const lookAtChildren = [
+  "TXT__single_launch", "TXT__single_launch001", "TXT__single_launch002", "TXT__single_launch003", 
+  "TXT__single_launch004", "TXT__single_launch005", "TXT__single_launch006"
+];
+
+init();
+
+let model = null; 
+let isModelLoaded = false;
+let modelRotateState = true;
 
 function init() {
   const canvas = document.querySelector('.webgl');
@@ -110,35 +124,63 @@ function init() {
     (gltf) => {
       model = gltf.scene;
       scene.add(model);
+      isModelLoaded = true; 
+
+      const visibilityFolder = gui.addFolder('Visibility Controls');
 
       model.traverse((child) => {
-        console.log(child.name);
-
+        if (child.name && hiddenModelChildren.includes(child.name)) {
+          child.visible = false;
+          visibilityFolder.add(child, 'visible').name(child.name);
+        }
+      
         if (child.name === "TRUN_MAIN") {
           arianeMain = child;
         }
-
-        if (
-          child.isMesh &&
-          (child.name === "___CHARGE_001" ||
-            child.name === "___CHARGE_002" ||
-            child.name === "___CHARGE_003" ||
-            child.name === "___CHARGE_004" ||
-            child.name === "___CHARGE_005" ||
-            child.name === "___CHARGE_006" ||
-            child.name === "___CHARGE_007")
-        ) {
+      
+        if (child.isMesh && (
+          child.name === "___CHARGE_001" ||
+          child.name === "___CHARGE_002" ||
+          child.name === "___CHARGE_003" ||
+          child.name === "___CHARGE_004" ||
+          child.name === "___CHARGE_005" ||
+          child.name === "___CHARGE_006" ||
+          child.name === "___CHARGE_007"
+        )) {
           child.material.transparent = true;
           child.material.opacity = 0;
+          console.log("opacity0", child.name)
+        }
+
+        if (child.name && lookAtChildren.includes(child.name)) {
+          // child.rotation.x = -1.5;
+          // child.rotation.y = 0;
+          // child.rotation.z = 1.5; 
+          
         }
       });
 
+      
+
+      visibilityFolder.open();
+
       function rotateModel() {
-        if (arianeMain) {
+        if (arianeMain && modelRotateState === true) { // Rotate only if modelRotateState is true
           arianeMain.rotation.y -= 0.0007;
         }
-        requestAnimationFrame(rotateModel);
+        if (modelRotateState !== false) {  // Only request next frame if rotation should continue
+          requestAnimationFrame(rotateModel);
+        }
       }
+      
+
+      function stopModelRotation() {
+        if (arianeMain && modelRotateState !== false) {
+          arianeMain.rotation.y = 0;  // Reset rotation to 0
+        }
+        modelRotateState = false; // Set to false to stop future rotations
+      }
+      
       rotateModel();
 
       model.position.set(3, -26, 17);
@@ -174,22 +216,36 @@ function init() {
       //event listeners
       overviewBtn.addEventListener('click', () => {
         doOpenRocket();
+        rotateModel();
       })
       
       modularityBtn.addEventListener('click', () => {
         doBooster4to2();
+        rotateModel()
       })
-      
+
+      // Mirror click event for modularity button
+      floatModularityBtn.addEventListener('click', () => {
+        modularityBtn.click(); // Trigger click on the main modularity button
+      });
+
+      // Mirror click event for versatility button
+      floatVersatilityBtn.addEventListener('click', () => {
+        versatilityBtn.click(); // Trigger click on the main versatility button
+      });
+
       versatilityBtn.addEventListener('click', () => {
         doVersatility();
+        stopModelRotation();
       })
-      
+
       booster2Btn.addEventListener('click', () => {
         doBooster4to2();
       }) 
       
       booster4Btn.addEventListener('click', () => {
         doBooster2to4();
+
       })
 
       // all functions
@@ -199,30 +255,43 @@ function init() {
         model.position.set(3, -26, 17);
         model.scale.set(1.7, 1.7, 1.7);
         model.rotation.set(0, 0, 0);
+        modelRotateState = true;
+
+        document.querySelectorAll('.floating-button-wrap').forEach((el) => {
+          el.style.display = 'flex';
+        })
         
         model.traverse((child) => {
           if (child.name && child.name.startsWith("TXT__")) {
             child.visible = false;
           }
         });
-      actions[0].reset().play();
 
-      isClickable = false;
+        actions[0].reset().play();
+
+        isClickable = false;
       }
 
       doOpenRocket();
 
       function doBooster4to2() {
         actions.forEach((a) => a.stop());
+        controls.target.set(3, -9, 17);
         const action = actions[1];
         action.reset();
-        action.timeScale = -1;
+        modelRotateState = true;
+        
+        action.timeScale = -3;
         action.time = booster4to2.duration;
         model.position.set(7, 4, 48);
         model.rotation.y += 0.01;
         model.scale.set(1.7, 1.7, 1.7);
         model.rotation.x = -1.5;
         camera.position.set(10, 10, 70);
+
+        document.querySelectorAll('.floating-button-wrap').forEach((el) => {
+          el.style.display = 'none';
+        })
 
         model.traverse((child) => {
           if (child.name && child.name.startsWith("TXT__")) {
@@ -236,17 +305,25 @@ function init() {
       
       function doBooster2to4() {
         actions.forEach((a) => a.stop());
+        // controls.target.set(7, 4, 30);
         model.position.set(7, 4, 48);
         model.rotation.x = -1.5;
         model.scale.set(1.7, 1.7, 1.7);
         camera.position.set(10, 10, 70);
+        modelRotateState = true;
   
         model.traverse((child) => {
           if (child.name && child.name.startsWith("TXT__")) {
             child.visible = false;
           }
         });
+
+        document.querySelectorAll('.floating-button-wrap').forEach((el) => {
+          el.style.display = 'none';
+        })
+
         actions[2].play();
+        actions[2].timeScale = 3;
 
         isClickable = false;
       }
@@ -302,10 +379,24 @@ function init() {
         model.position.set(3, -42, 17);
         model.scale.set(2.4, 2.4, 2.4);
         model.rotation.set(0, 0, 0);
+
+        modelRotateState = false;
         
         model.traverse((child) => {
             if (child.name && child.name.startsWith("TXT__")) {
                 child.visible = true;
+            }
+        });
+
+        document.querySelectorAll('.floating-button-wrap').forEach((el) => {
+          el.style.display = 'none';
+        })
+
+        console.log('Camera Position:', camera.position);
+
+        model.traverse((child) => {
+            if (child.name && hiddenModelChildren.includes(child.name)) {
+              child.visible = false;
             }
         });
     
@@ -327,16 +418,16 @@ function init() {
         // Start the click simulation immediately
         simulateClickOnCharge(chargeNames[currentChargeIndex]);
     
-        // Set interval to continue simulating clicks every 2.5 seconds
-        const chargeInterval = setInterval(() => {
-            currentChargeIndex++;
+        // // Set interval to continue simulating clicks every 2.5 seconds
+        // const chargeInterval = setInterval(() => {
+        //     currentChargeIndex++;
     
-            if (currentChargeIndex < chargeNames.length) {
-                simulateClickOnCharge(chargeNames[currentChargeIndex]);
-            } else {
-                clearInterval(chargeInterval);
-            }
-        }, 3000);
+        //     if (currentChargeIndex < chargeNames.length) {
+        //         simulateClickOnCharge(chargeNames[currentChargeIndex]);
+        //     } else {
+        //         clearInterval(chargeInterval);
+        //     }
+        // }, 3000);
     
         const originalOnClick = onClick;
         onClick = function(event) {
@@ -350,24 +441,8 @@ function init() {
                 }
             }
         };
-    }
-    
-      
-
-
-
-      // Add model controls to the dat.GUI
-      const modelFolder = gui.addFolder("Model");
-      modelFolder.add(model.position, "x", -70, 70).name("Position X");
-      modelFolder.add(model.position, "y", -70, 70).name("Position Y");
-      modelFolder.add(model.position, "z", -70, 70).name("Position Z");
-      modelFolder.add(model.rotation, "x", -Math.PI, Math.PI).name("Rotation X");
-      modelFolder.add(model.rotation, "y", -Math.PI, Math.PI).name("Rotation Y");
-      modelFolder.add(model.rotation, "z", -Math.PI, Math.PI).name("Rotation Z");
-      modelFolder.add(model.scale, "x", 0.1, 5).name("Scale X");
-      modelFolder.add(model.scale, "y", 0.1, 5).name("Scale Y");
-      modelFolder.add(model.scale, "z", 0.1, 5).name("Scale Z");
-      modelFolder.open();
+      }
+      animate();     
     },
     (xhr) => {
       console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
@@ -445,7 +520,6 @@ function createAnimationGUI(booster4to2) {
       actions[2].play();
     },
     playAnimation4: function () {
-      // Uncomment and modify as needed.
       actions.forEach((a) => a.stop());
       model.position.set(3, -42, 17);
       model.scale.set(2.4, 2.4, 2.4);
@@ -456,6 +530,12 @@ function createAnimationGUI(booster4to2) {
           child.visible = true;
         }
       });
+
+      model.traverse((child) => {
+        if (child.name && hiddenModelChildren.includes(child.name)) {
+          child.visible = false;
+        }
+    });
     },
   };
 
@@ -469,9 +549,21 @@ function createAnimationGUI(booster4to2) {
 function onPointerMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
   raycaster.setFromCamera(mouse, camera);
-  raycaster.intersectObjects(scene.children, true);
+
+  const intersects = raycaster.intersectObjects(model ? model.children : [], true);
+
+  if (intersects.length > 0) {
+    const hoveredObject = intersects[0].object;
+    
+    // console.log("Hovered over:", hoveredObject.name);
+  }
+  else {
+    model.children.forEach(child => child.scale.set(1, 1, 1));
+  }
 }
+
 
 let lastTargetTime = null;
 
@@ -527,15 +619,90 @@ function onClick(event) {
   }
 }
 
+function updateFloatingButtonPosition1() {
+  const chargeObject = model.getObjectByName("CHARGE_UTILE_SYLDA_1");
+  
+  if (chargeObject) {
+    const screenPosition = chargeObject.getWorldPosition(new THREE.Vector3());
+    screenPosition.project(camera);
+
+    const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (screenPosition.y * -0.5 + 0.5) * window.innerHeight;
+
+    const floatingButton = document.querySelector("#floating-button-1");
+
+    floatingButton.style.position = 'absolute';
+    floatingButton.style.left = `${x-20}px`;
+    floatingButton.style.top = `${y-20}px`;
+  }
+}
+
+function updateFloatingButtonPosition2() {
+  const chargeObject = model.getObjectByName("RESERVOIR_PROPERGOL__0001");
+  
+  if (chargeObject) {
+    const screenPosition = chargeObject.getWorldPosition(new THREE.Vector3());
+    screenPosition.project(camera);
+
+    const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (screenPosition.y * -0.5 + 0.5) * window.innerHeight;
+
+    const floatingButton = document.querySelector("#floating-button-2");
+
+    floatingButton.style.position = 'absolute';
+    floatingButton.style.left = `${x}px`;
+    floatingButton.style.top = `${y}px`;
+  }
+} 
+
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+function adjustForMobile() {
+  const isMobile = window.innerWidth <= 768;
+  
+  if (isMobile) {
+    if (model) {
+      model.scale.set(1, 1, 1);
+    }
+
+    camera.fov = 50;
+    camera.updateProjectionMatrix();
+  } 
+}
+
+window.addEventListener('resize', adjustForMobile);
+adjustForMobile();
+
+
 function animate() {
+  if (!isModelLoaded) return;
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
+
+  updateFloatingButtonPosition1();
+  updateFloatingButtonPosition2();
+
+  // model.traverse((child) => {
+  //   if (child.name && lookAtChildren.includes(child.name)) {
+  //     const direction = new THREE.Vector3(); 
+  //     direction.subVectors(camera.position, child.position); 
+  //     direction.y = 0; 
+  //     direction.normalize();
+
+  //     const angle = Math.atan2(direction.x, direction.z); 
+  //     child.rotation.y = angle - Math.PI/4; 
+
+  //     if (!child.axesHelper) {
+  //       child.axesHelper = new THREE.AxesHelper(4);
+  //       child.add(child.axesHelper);  
+  //     }
+  //   }
+  // });
 
   if (mixer) mixer.update(delta);
   controls.update();
