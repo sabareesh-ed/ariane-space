@@ -687,22 +687,22 @@ function animate() {
   updateFloatingButtonPosition1();
   updateFloatingButtonPosition2();
 
-  // model.traverse((child) => {
-  //   if (child.name && lookAtChildren.includes(child.name)) {
-  //     const direction = new THREE.Vector3(); 
-  //     direction.subVectors(camera.position, child.position); 
-  //     direction.y = 0; 
-  //     direction.normalize();
+  model.traverse((child) => {
+    if (child.name && lookAtChildren.includes(child.name)) {
+      const direction = new THREE.Vector3(); 
+      direction.subVectors(camera.position, child.position); 
+      direction.y = 0; 
+      direction.normalize();
 
-  //     const angle = Math.atan2(direction.x, direction.z); 
-  //     child.rotation.y = angle - Math.PI/4; 
+      const angle = Math.atan2(direction.x, direction.z); 
+      child.rotation.y = angle - Math.PI/4; 
 
-  //     if (!child.axesHelper) {
-  //       child.axesHelper = new THREE.AxesHelper(4);
-  //       child.add(child.axesHelper);  
-  //     }
-  //   }
-  // });
+      if (!child.axesHelper) {
+        child.axesHelper = new THREE.AxesHelper(4);
+        child.add(child.axesHelper);  
+      }
+    }
+  });
 
   if (mixer) mixer.update(delta);
   controls.update();
