@@ -374,7 +374,7 @@ function init() {
         model.position.set(3, -42, 17);
         model.scale.set(2.4, 2.4, 2.4);
         model.rotation.set(0, 0, 0);
-        controls.target.set(3, -9, 17);
+        controls.target.set(3, -9, 17); //
 
         modelRotateState = true;
         showLabels = true;
