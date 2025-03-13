@@ -57,6 +57,7 @@ init();
 let model = null; 
 let isModelLoaded = false;
 let modelRotateState = true;
+let arianeMain = null;  
 
 function init() {
   const canvas = document.querySelector('.webgl');
@@ -118,7 +119,6 @@ function init() {
     import.meta.url
   ).href;
 
-  let arianeMain = null;
   loader.load(
     modelURL,
     (gltf) => {
@@ -137,6 +137,8 @@ function init() {
         if (child.name === "TRUN_MAIN") {
           arianeMain = child;
         }
+
+
       
         if (child.isMesh && (
           child.name === "___CHARGE_001" ||
@@ -167,6 +169,7 @@ function init() {
       function rotateModel() {
         if (arianeMain && modelRotateState === true) { // Rotate only if modelRotateState is true
           arianeMain.rotation.y -= 0.0007;
+          // console.log("rotation", arianeMain.rotation.y)
         }
         if (modelRotateState !== false) {  // Only request next frame if rotation should continue
           requestAnimationFrame(rotateModel);
@@ -211,7 +214,7 @@ function init() {
 
       actions.push(actionOpenRocket, actionBooster4to2, actionBooster2to4, actionVersatility);
 
-      createAnimationGUI(booster4to2);
+      // createAnimationGUI(booster4to2);
 
       //event listeners
       overviewBtn.addEventListener('click', () => {
@@ -224,19 +227,17 @@ function init() {
         rotateModel()
       })
 
-      // Mirror click event for modularity button
       floatModularityBtn.addEventListener('click', () => {
-        modularityBtn.click(); // Trigger click on the main modularity button
+        modularityBtn.click();
       });
 
-      // Mirror click event for versatility button
       floatVersatilityBtn.addEventListener('click', () => {
-        versatilityBtn.click(); // Trigger click on the main versatility button
+        versatilityBtn.click();
       });
 
       versatilityBtn.addEventListener('click', () => {
         doVersatility();
-        stopModelRotation();
+        // stopModelRotation();
       })
 
       booster2Btn.addEventListener('click', () => {
@@ -248,7 +249,6 @@ function init() {
 
       })
 
-      // all functions
       function doOpenRocket() { 
         actions.forEach((action) => action.stop());
         controls.target.set(3, -9, 17);
@@ -380,7 +380,9 @@ function init() {
         model.scale.set(2.4, 2.4, 2.4);
         model.rotation.set(0, 0, 0);
 
-        modelRotateState = false;
+        modelRotateState = true;
+
+        rotateModel();
         
         model.traverse((child) => {
             if (child.name && child.name.startsWith("TXT__")) {
@@ -394,11 +396,11 @@ function init() {
 
         console.log('Camera Position:', camera.position);
 
-        model.traverse((child) => {
-            if (child.name && hiddenModelChildren.includes(child.name)) {
-              child.visible = false;
-            }
-        });
+        // model.traverse((child) => {
+        //     if (child.name && hiddenModelChildren.includes(child.name)) {
+        //       child.visible = false;
+        //     }
+        // });
     
         isClickable = true;
     
@@ -468,83 +470,83 @@ function init() {
   cameraFolder.open();
 }
 
-function createAnimationGUI(booster4to2) {
-  const animFolder = gui.addFolder("Animations");
+// function createAnimationGUI(booster4to2) {
+//   const animFolder = gui.addFolder("Animations");
 
-  const animationControls = {
-    playAnimation1: function () {
-      actions.forEach((action) => action.stop());
-      controls.target.set(3, -9, 17);
-      model.position.set(3, -26, 17);
-      model.scale.set(1.7, 1.7, 1.7);
-      model.rotation.set(0, 0, 0);
+//   const animationControls = {
+//     playAnimation1: function () {
+//       actions.forEach((action) => action.stop());
+//       controls.target.set(3, -9, 17);
+//       model.position.set(3, -26, 17);
+//       model.scale.set(1.7, 1.7, 1.7);
+//       model.rotation.set(0, 0, 0);
       
-      model.traverse((child) => {
-        if (child.name && child.name.startsWith("TXT__")) {
-          child.visible = false;
-        }
-      });
-      actions[0].reset().play();
-    },
-    playAnimation2: function () {
-      actions.forEach((a) => a.stop());
-      const action = actions[1];
-      action.reset();
-      action.timeScale = -1;
-      action.time = booster4to2.duration;
-      model.position.set(7, 4, 48);
-      model.rotation.y += 0.01;
-      model.scale.set(1.7, 1.7, 1.7);
-      model.rotation.x = -1.5;
-      camera.position.set(10, 10, 70);
+//       model.traverse((child) => {
+//         if (child.name && child.name.startsWith("TXT__")) {
+//           child.visible = false;
+//         }
+//       });
+//       actions[0].reset().play();
+//     },
+//     playAnimation2: function () {
+//       actions.forEach((a) => a.stop());
+//       const action = actions[1];
+//       action.reset();
+//       action.timeScale = -1;
+//       action.time = booster4to2.duration;
+//       model.position.set(7, 4, 48);
+//       model.rotation.y += 0.01;
+//       model.scale.set(1.7, 1.7, 1.7);
+//       model.rotation.x = -1.5;
+//       camera.position.set(10, 10, 70);
 
-      model.traverse((child) => {
-        if (child.name && child.name.startsWith("TXT__")) {
-          child.visible = false;
-        }
-      });
-      action.play();
-    },
-    playAnimation3: function () {
-      actions.forEach((a) => a.stop());
-      model.position.set(7, 4, 48);
-      model.rotation.x = -1.5;
-      model.scale.set(1.7, 1.7, 1.7);
-      camera.position.set(10, 10, 70);
+//       model.traverse((child) => {
+//         if (child.name && child.name.startsWith("TXT__")) {
+//           child.visible = false;
+//         }
+//       });
+//       action.play();
+//     },
+//     playAnimation3: function () {
+//       actions.forEach((a) => a.stop());
+//       model.position.set(7, 4, 48);
+//       model.rotation.x = -1.5;
+//       model.scale.set(1.7, 1.7, 1.7);
+//       camera.position.set(10, 10, 70);
 
-      model.traverse((child) => {
-        if (child.name && child.name.startsWith("TXT__")) {
-          child.visible = false;
-        }
-      });
-      actions[2].play();
-    },
-    playAnimation4: function () {
-      actions.forEach((a) => a.stop());
-      model.position.set(3, -42, 17);
-      model.scale.set(2.4, 2.4, 2.4);
-      model.rotation.set(0, 0, 0);
+//       model.traverse((child) => {
+//         if (child.name && child.name.startsWith("TXT__")) {
+//           child.visible = false;
+//         }
+//       });
+//       actions[2].play();
+//     },
+//     playAnimation4: function () {
+//       actions.forEach((a) => a.stop());
+//       model.position.set(3, -42, 17);
+//       model.scale.set(2.4, 2.4, 2.4);
+//       model.rotation.set(0, 0, 0);
       
-      model.traverse((child) => {
-        if (child.name && child.name.startsWith("TXT__")) {
-          child.visible = true;
-        }
-      });
+//       model.traverse((child) => {
+//         if (child.name && child.name.startsWith("TXT__")) {
+//           child.visible = true;
+//         }
+//       });
 
-      model.traverse((child) => {
-        if (child.name && hiddenModelChildren.includes(child.name)) {
-          child.visible = false;
-        }
-    });
-    },
-  };
+//       model.traverse((child) => {
+//         if (child.name && hiddenModelChildren.includes(child.name)) {
+//           child.visible = false;
+//         }
+//     });
+//     },
+//   };
 
-  animFolder.add(animationControls, "playAnimation1").name("openRocket");
-  animFolder.add(animationControls, "playAnimation2").name("actionBooster4to2");
-  animFolder.add(animationControls, "playAnimation3").name("actionBooster2to4");
-  animFolder.add(animationControls, "playAnimation4").name("actionVersatility");
-  animFolder.open();
-}
+//   animFolder.add(animationControls, "playAnimation1").name("openRocket");
+//   animFolder.add(animationControls, "playAnimation2").name("actionBooster4to2");
+//   animFolder.add(animationControls, "playAnimation3").name("actionBooster2to4");
+//   animFolder.add(animationControls, "playAnimation4").name("actionVersatility");
+//   animFolder.open();
+// }
 
 function onPointerMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -687,19 +689,77 @@ function animate() {
   updateFloatingButtonPosition1();
   updateFloatingButtonPosition2();
 
+  // model.traverse((child) => {
+  //   if (child.name && (lookAtChildren.includes(child.name) || hiddenModelChildren.includes(child.name))) {
+  //     const direction = new THREE.Vector3(); 
+  //     direction.subVectors(camera.position, child.position); 
+  //     direction.y = 0;
+  //     direction.normalize();
+
+  //     const childZAxis = new THREE.Vector3(0, 0, 1); 
+  //     childZAxis.applyMatrix4(model.matrixWorld);
+
+  //     const dotProduct = direction.dot(childZAxis);
+
+  //     if (dotProduct < 0) {
+  //       if (lookAtChildren.includes(child.name)) {  
+  //         child.visible = false;
+  //       }
+  //       if (hiddenModelChildren.includes(child.name)) {
+  //         child.visible = true;
+  //       }
+  //     } else {
+  //       if (lookAtChildren.includes(child.name)) {
+  //         child.visible = true;
+  //       }
+  //       if (hiddenModelChildren.includes(child.name)) {
+  //         child.visible = false;
+  //       }
+  //     }
+
+  //     if (!child.axesHelper) {
+  //       child.axesHelper = new THREE.AxesHelper(4);
+  //       child.add(child.axesHelper);  
+  //     }
+  //   }
+  // });
+
+
+  const modelQuaternion = new THREE.Quaternion();
+  const cameraQuaternion = new THREE.Quaternion();
+  const relativeQuaternion = new THREE.Quaternion();
+  const relativeEuler = new THREE.Euler();
+
+  const { radToDeg } = THREE.MathUtils;
+
+  const modelNamesSet = new Set([...lookAtChildren, ...hiddenModelChildren]);
+
+
   model.traverse((child) => {
-    if (child.name && lookAtChildren.includes(child.name)) {
-      const direction = new THREE.Vector3(); 
-      direction.subVectors(camera.position, child.position); 
-      direction.y = 0; 
-      direction.normalize();
+    if (child.name && modelNamesSet.has(child.name)) {
+      arianeMain.getWorldQuaternion(modelQuaternion);
+      camera.getWorldQuaternion(cameraQuaternion);
 
-      const angle = Math.atan2(direction.x, direction.z); 
-      child.rotation.y = angle - Math.PI/4; 
+      modelQuaternion.invert();  
+      relativeQuaternion.multiplyQuaternions(modelQuaternion, cameraQuaternion);
 
-      if (!child.axesHelper) {
-        child.axesHelper = new THREE.AxesHelper(4);
-        child.add(child.axesHelper);  
+      relativeEuler.setFromQuaternion(relativeQuaternion, 'YXZ');
+      const relativeAngle = radToDeg(relativeEuler.y);
+
+      if (relativeAngle > -55 && relativeAngle < 125) {
+        if (lookAtChildren.includes(child.name)) {  
+          child.visible = true;
+        }
+        if (hiddenModelChildren.includes(child.name)) {
+          child.visible = false;
+        }
+      } else {
+        if (lookAtChildren.includes(child.name)) {
+          child.visible = false;
+        }
+        if (hiddenModelChildren.includes(child.name)) {
+          child.visible = true;
+        }
       }
     }
   });
