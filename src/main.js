@@ -56,6 +56,7 @@ init();
 
 let model = null; 
 let isModelLoaded = false;
+let showLabels = false;
 let modelRotateState = true;
 let arianeMain = null;  
 
@@ -137,8 +138,6 @@ function init() {
         if (child.name === "TRUN_MAIN") {
           arianeMain = child;
         }
-
-
       
         if (child.isMesh && (
           child.name === "___CHARGE_001" ||
@@ -157,21 +156,18 @@ function init() {
         if (child.name && lookAtChildren.includes(child.name)) {
           // child.rotation.x = -1.5;
           // child.rotation.y = 0;
-          // child.rotation.z = 1.5; 
-          
+          // child.rotation.z = 1.5;  
         }
       });
-
-      
 
       visibilityFolder.open();
 
       function rotateModel() {
-        if (arianeMain && modelRotateState === true) { // Rotate only if modelRotateState is true
-          arianeMain.rotation.y -= 0.0007;
+        if (arianeMain && modelRotateState === true) {
+          arianeMain.rotation.y -= 0.0009;
           // console.log("rotation", arianeMain.rotation.y)
         }
-        if (modelRotateState !== false) {  // Only request next frame if rotation should continue
+        if (modelRotateState !== false) { 
           requestAnimationFrame(rotateModel);
         }
       }
@@ -179,9 +175,9 @@ function init() {
 
       function stopModelRotation() {
         if (arianeMain && modelRotateState !== false) {
-          arianeMain.rotation.y = 0;  // Reset rotation to 0
+          arianeMain.rotation.y = 0;
         }
-        modelRotateState = false; // Set to false to stop future rotations
+        modelRotateState = false;
       }
       
       rotateModel();
@@ -197,12 +193,12 @@ function init() {
       actionOpenRocket.clampWhenFinished = true;
       actionOpenRocket.loop = THREE.LoopOnce;
 
-      const booster4to2 = AnimationUtils.subclip(originalClip, "Clip2", 360, 550, 30);
+      const booster4to2 = AnimationUtils.subclip(originalClip, "Clip2", 365, 550, 30);
       const actionBooster4to2 = mixer.clipAction(booster4to2);
       actionBooster4to2.loop = THREE.LoopOnce;
       actionBooster4to2.clampWhenFinished = true;
 
-      const booster2to4 = AnimationUtils.subclip(originalClip, "Clip3", 360, 550, 30);
+      const booster2to4 = AnimationUtils.subclip(originalClip, "Clip3", 365, 550, 30);
       const actionBooster2to4 = mixer.clipAction(booster2to4);
       actionBooster2to4.loop = THREE.LoopOnce;
       actionBooster2to4.clampWhenFinished = true;
@@ -219,12 +215,10 @@ function init() {
       //event listeners
       overviewBtn.addEventListener('click', () => {
         doOpenRocket();
-        rotateModel();
       })
       
       modularityBtn.addEventListener('click', () => {
         doBooster4to2();
-        rotateModel()
       })
 
       floatModularityBtn.addEventListener('click', () => {
@@ -256,6 +250,7 @@ function init() {
         model.scale.set(1.7, 1.7, 1.7);
         model.rotation.set(0, 0, 0);
         modelRotateState = true;
+        showLabels = false;
 
         document.querySelectorAll('.floating-button-wrap').forEach((el) => {
           el.style.display = 'flex';
@@ -276,14 +271,15 @@ function init() {
 
       function doBooster4to2() {
         actions.forEach((a) => a.stop());
-        controls.target.set(3, -9, 17);
+        controls.target.set(3, -9, 30);
         const action = actions[1];
         action.reset();
         modelRotateState = true;
+        showLabels = false;
         
         action.timeScale = -3;
         action.time = booster4to2.duration;
-        model.position.set(7, 4, 48);
+        model.position.set(6, 0, 45);
         model.rotation.y += 0.01;
         model.scale.set(1.7, 1.7, 1.7);
         model.rotation.x = -1.5;
@@ -306,11 +302,12 @@ function init() {
       function doBooster2to4() {
         actions.forEach((a) => a.stop());
         // controls.target.set(7, 4, 30);
-        model.position.set(7, 4, 48);
+        model.position.set(6, 0, 45);
         model.rotation.x = -1.5;
         model.scale.set(1.7, 1.7, 1.7);
         camera.position.set(10, 10, 70);
         modelRotateState = true;
+        showLabels = false;
   
         model.traverse((child) => {
           if (child.name && child.name.startsWith("TXT__")) {
@@ -329,12 +326,10 @@ function init() {
       }
 
       function simulateClickOnCharge(targetObjectName) {
-        
-        // Ensure that the object exists
         if (!model) return;
       
         const clickedObject = model.getObjectByName(targetObjectName);
-        if (!clickedObject) return; // Object not found, exit
+        if (!clickedObject) return;
       
         const targetFrame = frameMapping[clickedObject.name];
       
@@ -379,10 +374,10 @@ function init() {
         model.position.set(3, -42, 17);
         model.scale.set(2.4, 2.4, 2.4);
         model.rotation.set(0, 0, 0);
+        controls.target.set(3, -9, 17);
 
         modelRotateState = true;
-
-        rotateModel();
+        showLabels = true;
         
         model.traverse((child) => {
             if (child.name && child.name.startsWith("TXT__")) {
@@ -395,16 +390,9 @@ function init() {
         })
 
         console.log('Camera Position:', camera.position);
-
-        // model.traverse((child) => {
-        //     if (child.name && hiddenModelChildren.includes(child.name)) {
-        //       child.visible = false;
-        //     }
-        // });
     
         isClickable = true;
-    
-        // Set up a function to simulate clicks on all charges at intervals
+
         const chargeNames = [
             "___CHARGE_001",
             "___CHARGE_002",
@@ -419,17 +407,10 @@ function init() {
         
         // Start the click simulation immediately
         simulateClickOnCharge(chargeNames[currentChargeIndex]);
-    
-        // // Set interval to continue simulating clicks every 2.5 seconds
-        // const chargeInterval = setInterval(() => {
-        //     currentChargeIndex++;
-    
-        //     if (currentChargeIndex < chargeNames.length) {
-        //         simulateClickOnCharge(chargeNames[currentChargeIndex]);
-        //     } else {
-        //         clearInterval(chargeInterval);
-        //     }
-        // }, 3000);
+
+        setTimeout(() => {
+            simulateClickOnCharge(chargeNames[5]);
+        }, 800);
     
         const originalOnClick = onClick;
         onClick = function(event) {
@@ -558,12 +539,10 @@ function onPointerMove(event) {
 
   if (intersects.length > 0) {
     const hoveredObject = intersects[0].object;
-    
-    // console.log("Hovered over:", hoveredObject.name);
   }
-  else {
-    model.children.forEach(child => child.scale.set(1, 1, 1));
-  }
+  // else {
+  //   model.children.forEach(child => child.scale.set(1, 1, 1));
+  // }
 }
 
 
@@ -689,80 +668,54 @@ function animate() {
   updateFloatingButtonPosition1();
   updateFloatingButtonPosition2();
 
-  // model.traverse((child) => {
-  //   if (child.name && (lookAtChildren.includes(child.name) || hiddenModelChildren.includes(child.name))) {
-  //     const direction = new THREE.Vector3(); 
-  //     direction.subVectors(camera.position, child.position); 
-  //     direction.y = 0;
-  //     direction.normalize();
-
-  //     const childZAxis = new THREE.Vector3(0, 0, 1); 
-  //     childZAxis.applyMatrix4(model.matrixWorld);
-
-  //     const dotProduct = direction.dot(childZAxis);
-
-  //     if (dotProduct < 0) {
-  //       if (lookAtChildren.includes(child.name)) {  
-  //         child.visible = false;
-  //       }
-  //       if (hiddenModelChildren.includes(child.name)) {
-  //         child.visible = true;
-  //       }
-  //     } else {
-  //       if (lookAtChildren.includes(child.name)) {
-  //         child.visible = true;
-  //       }
-  //       if (hiddenModelChildren.includes(child.name)) {
-  //         child.visible = false;
-  //       }
-  //     }
-
-  //     if (!child.axesHelper) {
-  //       child.axesHelper = new THREE.AxesHelper(4);
-  //       child.add(child.axesHelper);  
-  //     }
-  //   }
-  // });
-
-
   const modelQuaternion = new THREE.Quaternion();
   const cameraQuaternion = new THREE.Quaternion();
   const relativeQuaternion = new THREE.Quaternion();
   const relativeEuler = new THREE.Euler();
 
   const { radToDeg } = THREE.MathUtils;
-
   const modelNamesSet = new Set([...lookAtChildren, ...hiddenModelChildren]);
 
 
-  model.traverse((child) => {
-    if (child.name && modelNamesSet.has(child.name)) {
-      arianeMain.getWorldQuaternion(modelQuaternion);
-      camera.getWorldQuaternion(cameraQuaternion);
-
-      modelQuaternion.invert();  
-      relativeQuaternion.multiplyQuaternions(modelQuaternion, cameraQuaternion);
-
-      relativeEuler.setFromQuaternion(relativeQuaternion, 'YXZ');
-      const relativeAngle = radToDeg(relativeEuler.y);
-
-      if (relativeAngle > -55 && relativeAngle < 125) {
-        if (lookAtChildren.includes(child.name)) {  
-          child.visible = true;
-        }
-        if (hiddenModelChildren.includes(child.name)) {
-          child.visible = false;
-        }
-      } else {
-        if (lookAtChildren.includes(child.name)) {
-          child.visible = false;
-        }
-        if (hiddenModelChildren.includes(child.name)) {
-          child.visible = true;
+  if (showLabels) {
+    model.traverse((child) => {
+      if (child.name && modelNamesSet.has(child.name)) {
+        arianeMain.getWorldQuaternion(modelQuaternion);
+        camera.getWorldQuaternion(cameraQuaternion);
+  
+        modelQuaternion.invert();  
+        relativeQuaternion.multiplyQuaternions(modelQuaternion, cameraQuaternion);
+  
+        relativeEuler.setFromQuaternion(relativeQuaternion, 'YXZ');
+        const relativeAngle = radToDeg(relativeEuler.y);
+  
+        if (relativeAngle > -55 && relativeAngle < 125) {
+          if (lookAtChildren.includes(child.name)) {  
+            child.visible = true;
+          }
+          if (hiddenModelChildren.includes(child.name)) {
+            child.visible = false;
+          }
+        } else {
+          if (lookAtChildren.includes(child.name)) {
+            child.visible = false;
+          }
+          if (hiddenModelChildren.includes(child.name)) {
+            child.visible = true;
+          }
         }
       }
-    }
-  });
+    });
+  } else {
+    model.traverse((child) => {
+      if (lookAtChildren.includes(child.name)) {  
+        child.visible = false;
+      }
+      if (hiddenModelChildren.includes(child.name)) {
+        child.visible = false;
+      }
+    });
+  }
 
   if (mixer) mixer.update(delta);
   controls.update();
