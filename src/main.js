@@ -28,6 +28,7 @@ const versatilityBtn = document.querySelector('#versatility');
 const floatVersatilityBtn = document.querySelector('#float-btn-versatility');
 const booster2Btn = document.querySelector('#booster2');
 const booster4Btn = document.querySelector('#booster4');
+const loading = document.querySelector('#loading');
 
 const gui = new dat.GUI();
 
@@ -126,6 +127,8 @@ function init() {
       model = gltf.scene;
       scene.add(model);
       isModelLoaded = true; 
+
+      if (isModelLoaded) loading.style.display = 'none'; // isModelLoaded 
 
       const visibilityFolder = gui.addFolder('Visibility Controls');
 
