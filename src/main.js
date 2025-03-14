@@ -378,7 +378,8 @@ function init() {
         model.scale.set(2.4, 2.4, 2.4);
         model.rotation.set(0, 0, 0);
         controls.target.set(3, -9, 17); //
-
+        camera.position.set(10, 10, 70);
+        
         modelRotateState = true;
         showLabels = true;
         
