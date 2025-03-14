@@ -167,7 +167,7 @@ function init() {
 
       function rotateModel() {
         if (arianeMain && modelRotateState === true) {
-          arianeMain.rotation.y -= 0.0009;
+          arianeMain.rotation.y -= 0.001;
           // console.log("rotation", arianeMain.rotation.y)
         }
         if (modelRotateState !== false) { 
@@ -379,7 +379,7 @@ function init() {
         model.rotation.set(0, 0, 0);
         controls.target.set(3, -9, 17); //
         camera.position.set(10, 10, 70);
-        
+
         modelRotateState = true;
         showLabels = true;
         
